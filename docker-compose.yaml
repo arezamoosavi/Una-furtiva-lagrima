@@ -1,0 +1,56 @@
+version: "3.3"
+
+services:
+  airflow:
+    build: ./airflow
+    restart: unless-stopped
+    environment:
+      - AIRFLOW__CORE__FERNET_KEY=PeszOD9t6wKNdNONTGh-k4qsYbsGHQ8CSqTQZlqPCDk=
+      - AIRFLOW_HOME=/opt/airflow
+    ports:
+      - 8000:8000 #ui
+      - 5555:5555 #flower
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+    # command: sleep infinity
+
+  spark-master:
+    build: ./spark
+    restart: unless-stopped
+    ports:
+      - 4040:4040
+      - 7077:7077
+      - 8080:8080
+      - 18080:18080
+    command: sh spark-master.sh
+
+  spark-worker:
+    build: ./spark
+    restart: unless-stopped
+    ports:
+      - "8081-8085:8081"
+    command: sh spark-worker.sh
+
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=bitcoin
+    ports:
+      - 5432:5432
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  superset:
+    image: arezamoosavi/superset:latest
+    container_name: superset
+    environment:
+      ADMIN_USERNAME: admin
+      ADMIN_PWD: admin
+    ports:
+      - 8088:8088
+    volumes:
+      - ./superset:/superset
+    restart: unless-stopped
