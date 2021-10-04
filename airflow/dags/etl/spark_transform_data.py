@@ -28,7 +28,7 @@ def create_bitcoin_facts(process_date=None, **kwargs):
         sdf = sdf.filter(sdf.ref_date == process_date)
     
     sdf.printSchema()
-    sdf.orderBy("ref_date", ascending=True).show()
+    sdf.orderBy("ref_date", ascending=True).show(3)
     
     write_postgres(sdf, "postgres", "admin", "admin", "bitcoin", "fact_data", 1, "append")
 

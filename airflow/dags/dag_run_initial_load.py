@@ -12,10 +12,10 @@ args = {
 }
 
 dag = airflow.DAG(
-    dag_id="daily_etl",
+    dag_id="initial_etl",
     default_args=args,
     start_date=datetime(year=2021, month=9, day=19),
-    schedule_interval="0 07 * * *",
+    schedule_interval="@once",
     max_active_runs=1,
     concurrency=1,
 )
@@ -23,26 +23,35 @@ dag = airflow.DAG(
 start_task = BashOperator(
     task_id="start_task",
     queue='default',
-    bash_command="echo daily ETL for today_date: {{ ds }}",
+    bash_command="echo this task started at : {{ ds }}",
     dag=dag,
 )
 
-
-task_spark_etl = BashOperator(
-    task_id="spark_etl",
+task_spark_load = BashOperator(
+    task_id="spark_initial_load_data",
+    queue='default',
     bash_command="spark-submit "
-    "--master local "
+    "--master spark://spark-master:7077 "
     "--deploy-mode client "
-    "--driver-memory 2g --conf spark.network.timeout=10000s "
-    "--jars {{var.value.airflow_home}}/dags/catfish_dwh/jars/postgresql-42.2.5.jar "
-    "--py-files {{var.value.airflow_home}}/dags/catfish_dwh/utils/connector.py,"
-    "{{var.value.airflow_home}}/dags/utils/common.py,"
-    "{{var.value.airflow_home}}/dags/etl/spark_app.py ",
+    "--driver-memory 2g --num-executors 1 "
+    "--jars /opt/airflow/dags/etl/jars/postgresql-42.2.5.jar "
+    "--py-files /opt/airflow/dags/etl/utils/common.py "
+    "/opt/airflow/dags/etl/spark_load_data.py",
+    dag=dag,
+)
+
+task_spark_transform = BashOperator(
+    task_id="spark_initial_transform_data",
+    queue='default',
+    bash_command="spark-submit "
+    "--master spark://spark-master:7077 "
+    "--deploy-mode client "
+    "--driver-memory 2g --num-executors 1 "
+    "--jars /opt/airflow/dags/etl/jars/postgresql-42.2.5.jar "
+    "--py-files /opt/airflow/dags/etl/utils/common.py "
+    "/opt/airflow/dags/etl/spark_transform_data.py",
     dag=dag,
 )
 
 
-start_task
-
-# get all data by spark partionion and persist
-# read all data and window and perstis
+start_task >> task_spark_load >> task_spark_transform

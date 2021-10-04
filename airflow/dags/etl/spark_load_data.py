@@ -26,7 +26,8 @@ def create_initial_load(start_date=None, end_date=None,**kwargs):
 
     sdf = raw_data_transforms(sdf)
     sdf.printSchema()
-    sdf.show()
+    sdf.orderBy("ref_date", ascending=True).show(3)
+    
     write_postgres(sdf, "postgres", "admin", "admin", "bitcoin", "main_data", 1, "append")
 
     spark.stop()

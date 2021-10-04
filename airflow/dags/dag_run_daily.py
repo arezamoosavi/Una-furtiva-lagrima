@@ -14,8 +14,8 @@ args = {
 dag = airflow.DAG(
     dag_id="daily_etl",
     default_args=args,
-    start_date=datetime(year=2021, month=9, day=19),
-    schedule_interval="0 07 * * *",
+    start_date=datetime(year=2021, month=10, day=3),
+    schedule_interval="30 08 * * *",  # on airflow  2021-10-03T04:00:00+00:00
     max_active_runs=1,
     concurrency=1,
 )
@@ -23,11 +23,33 @@ dag = airflow.DAG(
 start_task = BashOperator(
     task_id="start_task",
     queue='default',
-    bash_command="echo daily ETL for today_date: {{ ds }}",
+    bash_command="echo this task started at : {{ ds }}",
     dag=dag,
 )
 
-start_task
+task_spark_load = BashOperator(
+    task_id="spark_initial_load_data",
+    bash_command="spark-submit "
+    "--master spark://spark-master:7077 "
+    "--deploy-mode client "
+    "--driver-memory 2g --num-executors 1 "
+    "--jars /opt/airflow/dags/etl/jars/postgresql-42.2.5.jar "
+    "--py-files /opt/airflow/dags/etl/utils/common.py "
+    "/opt/airflow/dags/etl/spark_load_data.py {{ds}} {{ds}}",
+    dag=dag,
+)
 
-# get yesterday data py op
-# do partition postgres op
+task_spark_transform = BashOperator(
+    task_id="spark_initial_transform_data",
+    bash_command="spark-submit "
+    "--master spark://spark-master:7077 "
+    "--deploy-mode client "
+    "--driver-memory 2g --num-executors 1 "
+    "--jars /opt/airflow/dags/etl/jars/postgresql-42.2.5.jar "
+    "--py-files /opt/airflow/dags/etl/utils/common.py "
+    "/opt/airflow/dags/etl/spark_transform_data.py {{ds}}",
+    dag=dag,
+)
+
+
+start_task >> task_spark_load >> task_spark_transform
