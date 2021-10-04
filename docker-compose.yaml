@@ -40,17 +40,12 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./airflow/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
 
-  superset:
-    image: arezamoosavi/superset:latest
-    container_name: superset
-    environment:
-      ADMIN_USERNAME: admin
-      ADMIN_PWD: admin
+  metabase:
+    container_name: metabase
+    image: metabase/metabase
     ports:
-      - 8088:8088
-    volumes:
-      - ./superset:/superset
+      - 3000:3000
     restart: unless-stopped

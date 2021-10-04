@@ -1,4 +1,4 @@
-.PHONY: airflow spark scale-spark superset down
+.PHONY: airflow spark scale-spark metabase down
 
 down:
 	docker-compose down -v
@@ -14,19 +14,16 @@ spark:
 scale-spark:
 	docker-compose scale spark-worker=3
 
-superset:
-	docker-compose up -d superset
+metabase:
+	docker-compose up -d metabase
 
 pg:
 	docker-compose up -d postgres
 
-create-dbs:
-	docker-compose exec postgres |
-
 run-spark:
 	docker-compose exec airflow \
 	spark-submit --master spark://spark-master:7077 \
-	--deploy-mode client --driver-memory 2g --num-executors 2 \
+	--deploy-mode client --driver-memory 2g --num-executors 1 \
 	--py-files dags/etl/utils/common.py \
 	--jars dags/etl/jars/postgresql-42.2.5.jar \
-	dags/etl/spark_read_data.py
+	dags/etl/spark_load_data.py

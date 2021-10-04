@@ -2,7 +2,7 @@ import os
 import sys
 import logging
 
-from common import get_spark_session, write_postgres, read_postgres
+from common import get_spark_session, write_postgres, read_postgres, create_bitcoin_fact
 
 # spark session
 spark = get_spark_session("Raw Data")
@@ -16,7 +16,7 @@ logger.setLevel(log4jLogger.Level.INFO)
 def create_bitcoin_facts(**kwargs):
     
     sdf = read_postgres(spark, "postgres", "admin", "admin", "bitcoin", "main_data")
-    sdf = raw_data_transforms(sdf)
+    sdf = create_bitcoin_fact(sdf)
     # sdf.printSchema()
     # sdf.show()
     write_postgres(sdf, "postgres", "admin", "admin", "bitcoin", "fact_data", 6, "append")

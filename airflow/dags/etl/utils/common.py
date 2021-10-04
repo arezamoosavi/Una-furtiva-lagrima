@@ -24,6 +24,25 @@ def raw_data_transforms(sdf):
     
     return sdf
 
+# def create_bitcoin_fact(sdf):
+#     df = df.withColumn(
+#         "row_number",
+#         row_number().over(
+#             Window.partitionBy(df[unique_column]).orderBy(df[based_column].desc()))
+#     ).filter(col("row_number") == 1)
+    
+#     windows = Window.partitionBy(transaction_df['SAVINGS_ACCOUNT_ID'])\
+#             .orderBy(transaction_df['CREATED_DATE'].desc())
+#         transaction_df = transaction_df.select(
+#             '*', 
+#             rank().over(windows).alias('rank')
+#         ).filter(
+#             (col('rank')==1)
+#         ).select(['SAVINGS_ACCOUNT_ID', 'CREATED_DATE', 'CUMULATIVE_BALANCE_DERIVED'])
+    
+    
+#     return sdf
+
 def write_postgres(sdf, host, user, password, database, table, partition=16, mode="append"):
     pg_properties = {
         "driver": "org.postgresql.Driver",
@@ -32,6 +51,7 @@ def write_postgres(sdf, host, user, password, database, table, partition=16, mod
     pg_url = "jdbc:postgresql://{}:5432/{}".format(host, database)
 
     (sdf
+    #  .sort("ref_date")
     #  .orderBy(["ref_date"], ascending=[1])
      .repartition(partition).sortWithinPartitions("ref_date")
      .write.jdbc(url=pg_url, table=table, mode=mode, properties=pg_properties))
@@ -41,5 +61,5 @@ def read_postgres(spark, host, user, password, database, table):
             .format("jdbc") \
             .option("url", "jdbc:postgresql://{0}/{1}?user={2}&password={3}".format(host, database, user, password)) \
             .option("driver", "org.postgresql.Driver") \
-            .option("query", "SELECT * FROM {}".format(table)) \
+            .option("query", "SELECT * FROM {} ORDER BY ref_date".format(table)) \
             .load())
