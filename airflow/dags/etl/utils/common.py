@@ -39,18 +39,21 @@ def extract_bitcoin_fact(sdf):
     
     return sdf
 
-def write_postgres(sdf, host, user, password, database, table, partition=16, mode="append"):
+def write_postgres(sdf, host, user, password, database, table, partition=16, mode="append"):    
     pg_properties = {
         "driver": "org.postgresql.Driver",
         "user": user,
         "password": password}
     pg_url = "jdbc:postgresql://{}:5432/{}".format(host, database)
-
-    (sdf
+    
+    sdf = sdf.persist(StorageLevel.DISK_ONLY)
+    
+    (sdf.repartition(partition).sortWithinPartitions("ref_date")
     #  .sort("ref_date")
     #  .orderBy(["ref_date"], ascending=[1])
-     .repartition(partition).sortWithinPartitions("ref_date")
      .write.jdbc(url=pg_url, table=table, mode=mode, properties=pg_properties))
+    
+    sdf.unpersist()
 
 def read_postgres(spark, host, user, password, database, table, cond=""):
     return (spark.read \
