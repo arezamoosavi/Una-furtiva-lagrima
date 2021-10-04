@@ -31,6 +31,7 @@ will scale spark worker.
 Airflow uses CeleryExecutor in order to scale the spark workflows and tasks. Here the postgres is used for celery result backend and broker.
 
 ```bash
+make pg
 make airflow
 ```
 ```bash
