@@ -14,7 +14,7 @@ This project is study on Bitcoin historical and recent data. Airflow and Spark i
 #### [part1: Initial ETL](https://github.com/arezamoosavi/Una-furtiva-lagrima/blob/main/airflow/dags/dag_run_initial_load.py)
 In order to aggregate all bitcoin historical data, process them and persist them into postgres.
 
-#### [part2: Daily](https://github.com/arezamoosavi/Una-furtiva-lagrima/blob/main/airflow/dags/dag_run_daily.py)
+#### [part2: Daily ETL](https://github.com/arezamoosavi/Una-furtiva-lagrima/blob/main/airflow/dags/dag_run_daily.py)
 In order to aggregate yesterday bitcoin data, process them and persist them into postgres.
 
 ### Spark
