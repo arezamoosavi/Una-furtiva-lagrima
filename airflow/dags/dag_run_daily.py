@@ -27,22 +27,7 @@ start_task = BashOperator(
     dag=dag,
 )
 
-
-task_spark_etl = BashOperator(
-    task_id="spark_etl",
-    bash_command="spark-submit "
-    "--master local "
-    "--deploy-mode client "
-    "--driver-memory 2g --conf spark.network.timeout=10000s "
-    "--jars {{var.value.airflow_home}}/dags/catfish_dwh/jars/postgresql-42.2.5.jar "
-    "--py-files {{var.value.airflow_home}}/dags/catfish_dwh/utils/connector.py,"
-    "{{var.value.airflow_home}}/dags/utils/common.py,"
-    "{{var.value.airflow_home}}/dags/etl/spark_app.py ",
-    dag=dag,
-)
-
-
 start_task
 
-# get all data by spark partionion and persist
-# read all data and window and perstis
+# get yesterday data py op
+# do partition postgres op
