@@ -5,6 +5,7 @@ import logging
 from pyspark import StorageLevel
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 
 
 def get_spark_session(appname):
@@ -24,24 +25,19 @@ def raw_data_transforms(sdf):
     
     return sdf
 
-# def create_bitcoin_fact(sdf):
-#     df = df.withColumn(
-#         "row_number",
-#         row_number().over(
-#             Window.partitionBy(df[unique_column]).orderBy(df[based_column].desc()))
-#     ).filter(col("row_number") == 1)
+def extract_bitcoin_fact(sdf):
+    # usd to euro
+    sdf = sdf.withColumnRenamed("close", "close_usd")
+    sdf = sdf.withColumn("close_euro", F.col("close_usd") * 1.1600)
     
-#     windows = Window.partitionBy(transaction_df['SAVINGS_ACCOUNT_ID'])\
-#             .orderBy(transaction_df['CREATED_DATE'].desc())
-#         transaction_df = transaction_df.select(
-#             '*', 
-#             rank().over(windows).alias('rank')
-#         ).filter(
-#             (col('rank')==1)
-#         ).select(['SAVINGS_ACCOUNT_ID', 'CREATED_DATE', 'CUMULATIVE_BALANCE_DERIVED'])
+    # extract euro_rolling_average for each date
+    days = lambda i: i * 86400
+    sdf = sdf.withColumn('ref_timestamp', sdf.ref_date.cast('timestamp'))
+    w = (Window.orderBy(F.col("ref_timestamp").cast('long')).rangeBetween(-days(6), 0))
+    sdf = sdf.withColumn('euro_rolling_average', F.avg("close_euro").over(w))
+    sdf = sdf.select(["ref_date", "close_usd", "close_euro", "euro_rolling_average"])
     
-    
-#     return sdf
+    return sdf
 
 def write_postgres(sdf, host, user, password, database, table, partition=16, mode="append"):
     pg_properties = {
@@ -56,10 +52,10 @@ def write_postgres(sdf, host, user, password, database, table, partition=16, mod
      .repartition(partition).sortWithinPartitions("ref_date")
      .write.jdbc(url=pg_url, table=table, mode=mode, properties=pg_properties))
 
-def read_postgres(spark, host, user, password, database, table):
+def read_postgres(spark, host, user, password, database, table, cond=""):
     return (spark.read \
             .format("jdbc") \
             .option("url", "jdbc:postgresql://{0}/{1}?user={2}&password={3}".format(host, database, user, password)) \
             .option("driver", "org.postgresql.Driver") \
-            .option("query", "SELECT * FROM {} ORDER BY ref_date".format(table)) \
+            .option("query", f"SELECT * FROM {table} {cond} ORDER BY ref_date") \
             .load())
