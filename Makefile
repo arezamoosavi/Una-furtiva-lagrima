@@ -11,6 +11,10 @@ airflow:
 scale-spark-queue:
 	docker-compose scale airflow-spark-queue=3
 
+stop-airflow:
+	docker-compose stop airflow airflow-spark-queue
+	echo y | docker-compose rm airflow airflow-spark-queue
+
 spark:
 	docker-compose up -d spark-master
 	sleep 2
