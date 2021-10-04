@@ -28,7 +28,8 @@ start_task = BashOperator(
 )
 
 task_spark_load = BashOperator(
-    task_id="spark_initial_load_data",
+    task_id="spark_daily_load_data",
+    queue='spark',
     bash_command="spark-submit "
     "--master spark://spark-master:7077 "
     "--deploy-mode client "
@@ -40,7 +41,8 @@ task_spark_load = BashOperator(
 )
 
 task_spark_transform = BashOperator(
-    task_id="spark_initial_transform_data",
+    task_id="spark_daily_transform_data",
+    queue='spark',
     bash_command="spark-submit "
     "--master spark://spark-master:7077 "
     "--deploy-mode client "
